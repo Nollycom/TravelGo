@@ -98,7 +98,7 @@ export default function Header() {
                 href={user.role === "ADMIN" ? "/admin" : user.role === "PROVIDER" || user.role === "PROVIDER_PENDING" ? "/provider/dashboard" : "/dashboard"}
                 className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-md border border-white/60 dark:border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all"
               >
-                <img src={user.photoURL || user.avatar || `https://i.pravatar.cc/100?u=${user.email}`} alt={user.name} className="h-7 w-7 rounded-full object-cover border border-white dark:border-[#1E293B]" />
+                <img src={user.role === "ADMIN" ? "/logo-travgo.jpg" : (user.photoURL || user.avatar || `https://i.pravatar.cc/100?u=${user.email}`)} alt={user.name} className="h-7 w-7 rounded-full object-cover border border-white dark:border-[#1E293B] bg-white" />
                 <span className="text-[13px] font-bold text-[#0F172A] dark:text-white max-w-[120px] truncate">{user.name && user.name !== "user" ? user.name : (user.email?.split("@")[0] || "Utilisateur")}</span>
                 <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-full bg-[#0E7C6B] text-white">{user.role || "USER"}</span>
               </Link>
@@ -156,7 +156,7 @@ export default function Header() {
               {user ? (
                 <>
                   <Link href={user.role === "ADMIN" ? "/admin" : user.role === "PROVIDER" || user.role === "PROVIDER_PENDING" ? "/provider/dashboard" : "/dashboard"} onClick={() => setOpen(false)} className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-full bg-[#0F172A] dark:bg-white text-white dark:text-black font-bold text-sm shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
-                    <img src={user.photoURL || user.avatar || `https://i.pravatar.cc/100?u=${user.email}`} alt="" className="h-7 w-7 rounded-full border-2 border-white/20 object-cover" />
+                    <img src={user.role === "ADMIN" ? "/logo-travgo.jpg" : (user.photoURL || user.avatar || `https://i.pravatar.cc/100?u=${user.email}`)} alt="" className="h-7 w-7 rounded-full border-2 border-white/20 object-cover bg-white" />
                     <div className="flex-1 text-left min-w-0 leading-tight">
                       <div className="text-[13px] font-bold truncate">{user.name && user.name !== "user" ? user.name : (user.email?.split("@")[0] || "Utilisateur")}</div>
                       <div className="text-[10px] opacity-70 truncate">{user.email}</div>
