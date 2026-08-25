@@ -169,7 +169,7 @@ export default function AdminPage() {
               ))}
             </nav>
             <div className="mt-4 p-3 rounded-2xl bg-white/10 border border-white/10 text-xs">
-              <div className="flex items-center gap-2"><img src={user?.photoURL || "/logo-travgo.jpg"} alt="admin" className="h-8 w-8 rounded-full object-cover border-2 border-white/20" /><div><div className="font-bold">{adminName} — ADMIN</div><div className="opacity-70">khalil.alnajjar81@gmail.com</div></div></div>
+              <div className="flex items-center gap-3"><img src={user?.photoURL || "/logo-travgo.jpg"} alt="TravGo Admin" className="h-9 w-9 rounded-full object-cover bg-white border-2 border-white/30 shadow-[0_2px_8px_rgba(0,0,0,0.15)] shrink-0" onError={(e)=>{ (e.target as HTMLImageElement).src="/icon.png"; }} /><div className="min-w-0"><div className="font-bold truncate">{adminName} — ADMIN</div><div className="opacity-70 truncate">khalil.alnajjar81@gmail.com</div></div></div>
               <div className="mt-2 text-[#6EE7B7]">● En ligne • {users.length} users</div>
             </div>
           </div>
