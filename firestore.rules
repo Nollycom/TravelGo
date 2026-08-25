@@ -55,19 +55,42 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // ---- Quote Requests (devis) ----
+    // ---- Quote Requests (devis) ---- (temps réel, suppression par owner)
     match /quoteRequests/{id} {
       allow create: if request.auth != null;
       allow read: if request.auth != null && (
         resource.data.userId == request.auth.uid || isProvider() || isAdmin()
       );
-      allow update, delete: if isAdmin();
+      allow update: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // ---- Notifications ----
+    // ---- Favorites (offres sauvegardées) ----
+    match /favorites/{favId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    // subcollection sous users aussi autorisée
+    match /users/{userId}/favorites/{favId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ---- Recherches sauvegardées ----
+    match /searches/{searchId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    match /users/{userId}/searches/{searchId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ---- Notifications ---- (lecture/suppression par owner)
     match /notifications/{id} {
       allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
-      allow write: if isAdmin();
+      allow create, update: if isAdmin();
+      allow delete: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // ---- Settings ----
