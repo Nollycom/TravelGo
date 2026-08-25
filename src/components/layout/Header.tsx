@@ -43,27 +43,26 @@ export default function Header() {
       {/* Glass background 3D */}
       <div className={`absolute inset-0 transition-all duration-500 border-b ${scrolled ? "bg-white/75 dark:bg-[#080C14]/70 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08),0_1px_0_rgba(255,255,255,0.6)_inset] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.06)_inset] border-white/40 dark:border-white/[0.06]" : "bg-white/55 dark:bg-[#0F172A]/40 backdrop-blur-xl border-white/20 dark:border-white/[0.04] shadow-[0_4px_24px_rgba(0,0,0,0.04)]"}`} />
 
-      <div className="relative mx-auto max-w-[1280px] px-4 lg:px-6 h-[72px] flex items-center justify-between gap-4">
+      <div className="relative mx-auto max-w-[1280px] px-4 lg:px-6 h-[60px] flex items-center justify-between gap-3">
         {/* Logo 3D */}
-        <div className="flex items-center gap-5">
-          <Link href="/" className="flex items-center gap-3 group" style={{ transformStyle: "preserve-3d" }}>
-            <div className="relative h-11 w-11 rounded-[14px] overflow-hidden bg-white dark:bg-[#0F172A] border border-[#E2E8F0]/60 dark:border-white/10 shadow-[0_6px_16px_rgba(14,124,107,0.22),0_1px_0_rgba(255,255,255,0.8)_inset] dark:shadow-[0_8px_24px_rgba(0,0,0,0.5),0_1px_0_rgba(255,255,255,0.08)_inset] group-hover:shadow-[0_10px_28px_rgba(14,124,107,0.32)] group-hover:-translate-y-[1px] transition-all duration-300">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2.5 group" style={{ transformStyle: "preserve-3d" }}>
+            <div className="relative h-9 w-9 rounded-xl overflow-hidden bg-white dark:bg-[#0F172A] border border-[#E2E8F0]/60 dark:border-white/10 shadow-[0_4px_12px_rgba(14,124,107,0.18),0_1px_0_rgba(255,255,255,0.8)_inset] dark:shadow-[0_6px_16px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.06)_inset] group-hover:shadow-[0_6px_16px_rgba(14,124,107,0.28)] transition-all">
               <img src="/logo-travgo.jpg" alt="TravGo" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-transparent opacity-60" />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-black tracking-tight text-[24px] text-[#0F172A] dark:text-white drop-shadow-[0_1px_0_rgba(255,255,255,0.8)] dark:drop-shadow-none">TravGo</span>
-              <span className="hidden sm:inline-flex items-center text-[11px] font-black tracking-widest bg-gradient-to-br from-[#0E7C6B] to-[#0A5E51] dark:from-[#14B8A6] dark:to-[#0E7C6B] text-white px-2.5 py-1 rounded-full shadow-[0_3px_10px_rgba(14,124,107,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] border border-white/20">KSA</span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-black tracking-tight text-[20px] text-[#0F172A] dark:text-white">TravGo</span>
+              <span className="hidden sm:inline-flex items-center text-[10px] font-black tracking-widest bg-gradient-to-br from-[#0E7C6B] to-[#0A5E51] dark:from-[#14B8A6] dark:to-[#0E7C6B] text-white px-2 py-0.5 rounded-full shadow-[0_2px_8px_rgba(14,124,107,0.3)] border border-white/20">KSA</span>
             </div>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1.5 ml-2">
+          <nav className="hidden lg:flex items-center gap-1 ml-1">
             {nav.map((i) => (
               <Link
                 key={i.label}
                 href={i.href}
-                className="relative px-3.5 py-2 rounded-full text-[13.5px] font-bold tracking-[-0.01em] text-[#334155] dark:text-[#CBD5E1] hover:text-[#0F172A] dark:hover:text-white bg-transparent hover:bg-white/70 dark:hover:bg-white/[0.07] hover:backdrop-blur-md hover:shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] dark:hover:shadow-[0_4px_16px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.06)] border border-transparent hover:border-white/60 dark:hover:border-white/10 hover:-translate-y-[1px] transition-all duration-200"
-                style={{ transformStyle: "preserve-3d" }}
+                className="relative px-3 py-1.5 rounded-full text-[13px] font-semibold tracking-[-0.01em] text-[#334155] dark:text-[#CBD5E1] hover:text-[#0F172A] dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/[0.06] hover:backdrop-blur-md border border-transparent hover:border-white/50 transition-all"
               >
                 {i.label}
               </Link>
@@ -72,49 +71,50 @@ export default function Header() {
         </div>
 
         {/* Actions Desktop */}
-        <div className="hidden lg:flex items-center gap-2">
-          <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-md border border-white/60 dark:border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.8)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.06)]">
-            <div className="flex items-center gap-1">
-              <button onClick={() => setLang("fr")} className={`h-7 px-3 rounded-full text-xs font-black tracking-wide transition-all ${lang === "fr" ? "bg-[#0F172A] dark:bg-white text-white dark:text-black shadow-[0_2px_8px_rgba(0,0,0,0.12)]" : "text-[#475569] dark:text-[#94A3B8] hover:bg-white dark:hover:bg-white/10 hover:text-[#0F172A] dark:hover:text-white"}`}>FR</button>
-              <button onClick={() => setLang("ar")} className={`h-7 px-3 rounded-full text-xs font-black transition-all ${lang === "ar" ? "bg-[#0F172A] dark:bg-white text-white dark:text-black shadow-[0_2px_8px_rgba(0,0,0,0.12)]" : "text-[#475569] dark:text-[#94A3B8] hover:bg-white dark:hover:bg-white/10 hover:text-[#0F172A] dark:hover:text-white"}`}>العربية</button>
-              <button onClick={() => setLang("en")} className={`h-7 px-3 rounded-full text-xs font-black tracking-wide transition-all ${lang === "en" ? "bg-[#0F172A] dark:bg-white text-white dark:text-black shadow-[0_2px_8px_rgba(0,0,0,0.12)]" : "text-[#475569] dark:text-[#94A3B8] hover:bg-white dark:hover:bg-white/10 hover:text-[#0F172A] dark:hover:text-white"}`}>EN</button>
-            </div>
-            <div className="w-px h-6 bg-[#E2E8F0]/80 dark:bg-white/10 mx-1" />
+        <div className="hidden lg:flex items-center gap-1.5">
+          <div className="flex items-center gap-1 p-1 rounded-full bg-white/70 dark:bg-white/[0.06] backdrop-blur-md border border-white/50 dark:border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value as any)}
+              className="h-7 bg-transparent pl-2 pr-6 text-xs font-bold text-[#0F172A] dark:text-white focus:outline-none cursor-pointer"
+            >
+              <option value="fr" className="text-black">FR</option>
+              <option value="ar" className="text-black">العربية</option>
+              <option value="en" className="text-black">EN</option>
+            </select>
+            <div className="w-px h-5 bg-[#E2E8F0] dark:bg-white/10" />
             <button
               onClick={toggle}
               aria-label="toggle dark"
-              className="h-8 w-8 rounded-full bg-gradient-to-br from-white to-[#F1F5F9] dark:from-[#1A2332] dark:to-[#0F172A] border border-white/60 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.8)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.3)] flex items-center justify-center text-[15px] hover:scale-105 hover:rotate-[8deg] transition-all duration-300"
+              className="h-7 w-7 rounded-full bg-white dark:bg-[#0F172A] border border-[#E2E8F0]/50 dark:border-white/10 flex items-center justify-center text-[13px] hover:scale-105 transition-transform"
             >
               {theme === "dark" ? "☀️" : "🌙"}
             </button>
           </div>
 
           {user ? (
-            <div className="flex items-center gap-2 ml-1">
+            <div className="flex items-center gap-1.5 ml-1">
               <Link
                 href={user.role === "ADMIN" ? "/admin" : user.role === "PROVIDER" || user.role === "PROVIDER_PENDING" ? "/provider/dashboard" : "/dashboard"}
-                className="flex items-center gap-2.5 pl-1.5 pr-3.5 py-1.5 rounded-full bg-white/85 dark:bg-[#0F172A]/85 backdrop-blur-md border border-white/60 dark:border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.8)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.35)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-[1px] transition-all"
+                className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-md border border-white/60 dark:border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all"
               >
-                <img src={user.photoURL || user.avatar || `https://i.pravatar.cc/100?u=${user.email}`} alt={user.name} className="h-8 w-8 rounded-full object-cover border-2 border-white dark:border-[#1E293B] shadow-sm" />
-                <div className="flex flex-col leading-none">
-                  <span className="text-[14px] font-bold text-[#0F172A] dark:text-white max-w-[160px] truncate leading-tight">{user.name && user.name !== "user" ? user.name : (user.email?.split("@")[0] || "Utilisateur")}</span>
-                  <span className="text-[10px] font-medium text-[#64748B] dark:text-[#94A3B8] -mt-0.5">{user.email}</span>
-                </div>
-                <span className="text-[10px] font-black tracking-widest px-2 py-0.5 rounded-full bg-[#0E7C6B] dark:bg-[#14B8A6] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ml-1">{user.role || "USER"}</span>
+                <img src={user.photoURL || user.avatar || `https://i.pravatar.cc/100?u=${user.email}`} alt={user.name} className="h-7 w-7 rounded-full object-cover border border-white dark:border-[#1E293B]" />
+                <span className="text-[13px] font-bold text-[#0F172A] dark:text-white max-w-[120px] truncate">{user.name && user.name !== "user" ? user.name : (user.email?.split("@")[0] || "Utilisateur")}</span>
+                <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-full bg-[#0E7C6B] text-white">{user.role || "USER"}</span>
               </Link>
               <button
                 onClick={async () => { await signOut(auth); localStorage.removeItem("travgo-user"); localStorage.removeItem("travgo-role"); location.href = "/"; }}
-                className="px-3.5 py-2 rounded-full text-[13px] font-bold text-[#475569] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white bg-white/50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-white/40 dark:border-white/10 backdrop-blur-md shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all"
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-[#475569] dark:text-[#94A3B8] hover:text-[#0F172A] bg-white/60 dark:bg-white/5 border border-white/40 dark:border-white/10"
               >
                 Déconnexion
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 ml-1">
-              <Link href="/login" className="px-4 py-2 rounded-full text-[13px] font-black text-[#0F172A] dark:text-white hover:bg-white/70 dark:hover:bg-white/10 backdrop-blur-md border border-transparent hover:border-white/50 dark:hover:border-white/10 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-all">
+            <div className="flex items-center gap-1">
+              <Link href="/login" className="px-3 py-1.5 rounded-full text-xs font-bold text-[#0F172A] dark:text-white hover:bg-white/60 border border-transparent hover:border-white/40 transition-all">
                 {t.nav.login}
               </Link>
-              <Link href="/register" className="px-4 py-2 rounded-full text-[13px] font-black bg-white dark:bg-white text-[#0F172A] border border-[#E2E8F0]/50 dark:border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.1)] hover:-translate-y-[1px] transition-all">
+              <Link href="/register" className="px-3 py-1.5 rounded-full text-xs font-bold bg-white dark:bg-white text-[#0F172A] border border-[#E2E8F0]/50 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all">
                 {t.nav.register}
               </Link>
             </div>
@@ -122,7 +122,7 @@ export default function Header() {
 
           <Link
             href="/quote"
-            className="ml-1 px-5 py-2.5 rounded-full bg-gradient-to-br from-[#0E7C6B] via-[#0E7C6B] to-[#0A5E51] dark:from-[#14B8A6] dark:to-[#0E7C6B] text-white font-black text-[13px] tracking-[-0.01em] shadow-[0_6px_16px_rgba(14,124,107,0.35),0_1px_0_rgba(255,255,255,0.2)_inset,0_-1px_0_rgba(0,0,0,0.1)_inset] hover:shadow-[0_10px_28px_rgba(14,124,107,0.45)] hover:-translate-y-[1.5px] hover:scale-[1.02] active:translate-y-[0px] active:scale-[0.99] transition-all duration-200 border border-white/15"
+            className="ml-1 px-4 py-2 rounded-full bg-gradient-to-br from-[#0E7C6B] to-[#0A5E51] dark:from-[#14B8A6] dark:to-[#0E7C6B] text-white font-bold text-xs shadow-[0_4px_12px_rgba(14,124,107,0.3)] hover:shadow-[0_6px_16px_rgba(14,124,107,0.4)] hover:-translate-y-[1px] transition-all border border-white/15"
           >
             {t.nav.quote}
           </Link>
@@ -143,7 +143,7 @@ export default function Header() {
       </div>
 
       {open && (
-        <div className="lg:hidden absolute top-[72px] inset-x-0 px-4 pb-4">
+        <div className="lg:hidden absolute top-[60px] inset-x-0 px-4 pb-4">
           <div className="rounded-[24px] bg-white/85 dark:bg-[#0F172A]/85 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-[0_16px_48px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.6)_inset] dark:shadow-[0_16px_48px_rgba(0,0,0,0.5),0_1px_0_rgba(255,255,255,0.06)_inset] overflow-hidden">
             <div className="p-3 grid grid-cols-2 gap-2">
               {nav.map((i) => (
