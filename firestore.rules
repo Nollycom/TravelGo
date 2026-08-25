@@ -38,20 +38,19 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && (resource.data.providerId == request.auth.uid || isAdmin());
     }
 
-    // ---- Users ----
-    // IMPORTANT: allow create/read sans auth temporairement pour contourner CONFIGURATION_NOT_FOUND
-    // À resserrer après activation Auth Email/Password dans Console
+    // ---- Users ---- (temps réel — Auth activé)
     match /users/{userId} {
-      allow create: if true; // TODO: resserrer à request.auth.uid == userId
-      allow read: if true; // TODO: resserrer à auth != null && (owner || isAdmin)
-      allow update: if true; // permissif temporaire pour fallback; resserrer à request.auth.uid == userId || isAdmin()
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      // lecture publique du profil minimal pour login fallback désactivé
+      allow get: if true;
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
-    // ---- Provider Requests (inscription agence) ----
+    // ---- Provider Requests (inscription agence) ---- (temps réel)
     match /providerRequests/{reqId} {
-      // Anyone can create a request (voyageur/prestataire inscription avant auth)
-      allow create: if true;
+      allow create: if request.auth != null;
       allow read: if isAdmin();
       allow update, delete: if isAdmin();
     }
