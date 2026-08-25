@@ -52,14 +52,25 @@ export default function ProviderDashboard() {
     return () => unsub();
   }, []);
 
-  // Temps réel offres du prestataire
+  // Temps réel offres du prestataire + demandes globales
   useEffect(() => {
     if (!user?.uid) return;
     const q = query(collection(db, "offers"), where("providerId", "==", user.uid));
     const unsub = onSnapshot(q, (snap) => setOffers(snap.docs.map(d => ({ id: d.id, ...d.data() }))), () => setOffers([]));
-    const q2 = query(collection(db, "quoteRequests"), where("providerId", "==", user.uid));
-    const un2 = onSnapshot(q2, (snap) => setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() }))), () => {});
-    return () => { unsub(); un2(); };
+    // Tous les devis en attente (envoyés à toutes agences validées)
+    const q2 = query(collection(db, "quoteRequests"), where("status", "==", "pending"));
+    const un2 = onSnapshot(q2, (snap) => setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() }))), () => setLeads([]));
+    // Aussi écouter les notifications pour cet agence (Devis reçus via notifications)
+    const q3 = query(collection(db, "notifications"), where("userId", "==", user.uid));
+    const un3 = onSnapshot(q3, (snap) => {
+      const notifs = snap.docs.map(d=>({id:d.id, ...d.data()} as any)).filter(n=>n.type==="quote_request");
+      if (notifs.length) setLeads(prev => {
+        const ids = new Set(prev.map(p=>p.id));
+        const extra = notifs.filter(n=>!ids.has(n.quoteRequestId)).map(n=>({ id: n.quoteRequestId, destination: n.destination, cityFrom: n.cityFrom, budget: n.budget, travelers: n.travelers, userName: n.fromUserName, userEmail: n.fromUserEmail, status: "pending", source: "notification" }));
+        return [...prev, ...extra];
+      });
+    }, ()=>{});
+    return () => { unsub(); un2(); un3(); };
   }, [user?.uid]);
 
   const handleSaveProfil = async () => {
@@ -109,6 +120,25 @@ export default function ProviderDashboard() {
   };
 
   const delOffer = async (id: string) => { if (!confirm("Supprimer cette offre ?")) return; await deleteDoc(doc(db, "offers", id)); };
+  const contactLead = async (lead: any) => {
+    try {
+      await addDoc(collection(db, "notifications"), {
+        userId: lead.userId,
+        type: "provider_contact",
+        title: `${user.name} a répondu à votre demande ${lead.destination}`,
+        message: `${user.name} (${user.city || ""}) • ${user.phone || ""} → Contactez pour ${lead.destination} ${lead.cityFrom}→${lead.destination} ${lead.budget}`,
+        quoteRequestId: lead.id,
+        fromUserId: user.uid,
+        fromUserName: user.name,
+        fromUserEmail: user.email,
+        fromUserPhone: user.phone,
+        read: false,
+        createdAt: serverTimestamp(),
+      });
+      setMsg("✓ Contact envoyé — l'utilisateur a reçu une notification");
+      setTimeout(()=>setMsg(""),2000);
+    } catch(e:any){ setMsg("✗ "+e.message); }
+  };
 
   if (loading) return <div className="mx-auto max-w-[1280px] px-4 py-10 text-center text-sm">Chargement...</div>;
   if (!user) return <div className="mx-auto max-w-[640px] px-4 py-16 text-center"><div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-8"><h2 className="font-black">Non connecté</h2><Link href="/login" className="mt-4 inline-block px-6 py-2 rounded-full bg-[#0E7C6B] text-white font-bold">Se connecter</Link></div></div>;
@@ -220,13 +250,17 @@ export default function ProviderDashboard() {
           )}
           {active==="leads" && (
             <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-6">
-              <h3 className="font-bold dark:text-white">Leads / Demandes</h3>
-              {leads.length===0 ? <div className="text-sm text-[#64748B] py-6 text-center">Aucune demande pour vous</div> : (
+              <h3 className="font-bold dark:text-white">Leads / Demandes — Temps réel</h3>
+              <p className="text-xs text-[#64748B] mt-1">Toutes les demandes envoyées à toutes les agences validées apparaissent ici. Contactez l'utilisateur via notification.</p>
+              {leads.length===0 ? <div className="text-sm text-[#64748B] py-6 text-center">Aucune demande — en attente d'une demande utilisateur</div> : (
                 <div className="space-y-2 mt-3">
                   {leads.map((l:any)=>(
-                    <div key={l.id} className="p-3 rounded-2xl border flex justify-between items-center">
-                      <div><div className="font-bold text-sm dark:text-white">{l.destination || l.dest}</div><div className="text-xs text-[#64748B]">{l.budget} • {l.travelers} voyageurs</div></div>
-                      <span className="text-xs px-2 py-1 rounded-full bg-[#E6F4F1] text-[#0E7C6B]">{l.status || "Nouveau"}</span>
+                    <div key={l.id} className="p-3 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 dark:border-[#1E293B]">
+                      <div className="flex-1"><div className="font-bold text-sm dark:text-white">{l.destination || l.dest} • {l.cityFrom} → {l.destination}</div><div className="text-xs text-[#64748B]">{l.userName || l.userEmail || l.userId} • {l.budget} • {l.travelers} voyageurs • {l.duration || ""}</div></div>
+                      <div className="flex gap-2">
+                        <span className="text-xs px-2 py-1 rounded-full bg-[#E6F4F1] text-[#0E7C6B] self-center">{l.status || "Nouveau"}</span>
+                        <button onClick={()=>contactLead(l)} className="px-3 py-1.5 rounded-full bg-[#0E7C6B] text-white text-xs font-bold">Contacter</button>
+                      </div>
                     </div>
                   ))}
                 </div>

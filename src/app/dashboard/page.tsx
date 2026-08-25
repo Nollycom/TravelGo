@@ -75,10 +75,14 @@ export default function Dashboard() {
     return () => { un1(); un2(); un3(); un4(); un5(); };
   }, [user?.uid]);
 
-  // Pour Devis reçus : on montre les mêmes requests avec status answered (simulé)
+  // Devis reçus = réponses agences via notifications provider_contact + requests answered
   useEffect(() => {
-    setQuotes(requests.filter((r: any) => r.status === "answered" || r.responses > 0));
-  }, [requests]);
+    const fromRequests = requests.filter((r: any) => r.status === "answered" || (r.responses && r.responses > 0));
+    const fromNotifs = notifs.filter((n: any) => n.type === "provider_contact").map((n: any) => ({
+      id: n.id, destination: n.destination || n.title, budget: n.budget || "—", status: "Devis reçu", provider: n.fromUserName, message: n.message, fromUserPhone: n.fromUserPhone
+    }));
+    setQuotes([...fromRequests, ...fromNotifs]);
+  }, [requests, notifs]);
 
   const handleSaveProfile = async () => {
     if (!user?.uid) return;
