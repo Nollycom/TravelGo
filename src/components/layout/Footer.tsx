@@ -37,7 +37,10 @@ export default function Footer() {
           <div>
             <div className="font-bold mb-3">{t.footer.help}</div>
             <ul className="space-y-2 text-sm text-white/70">
-              <li>Centre d&apos;aide</li><li>Conditions</li><li>Confidentialité</li><li>Contact • +966 550 000 000</li>
+              <li><Link href="/help" className="hover:text-white">Centre d&apos;aide</Link></li>
+              <li><Link href="/conditions" className="hover:text-white">Conditions</Link></li>
+              <li><Link href="/confidentialite" className="hover:text-white">Confidentialité</Link></li>
+              <li><a href="tel:+966598009209" className="hover:text-white">Contact • +966 598 009 209</a></li>
             </ul>
           </div>
         </div>
