@@ -1,0 +1,25 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /offers/{offerId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /reels/{reelId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /providers/{providerId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == providerId;
+    }
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}

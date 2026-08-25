@@ -1,0 +1,12 @@
+runConfig:
+  region: me-central1
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 100
+env:
+  - variable: NEXT_PUBLIC_DEFAULT_CURRENCY
+    value: SAR
+  - variable: NEXT_PUBLIC_DEFAULT_LOCALE
+    value: ar-SA
+  - variable: NEXT_PUBLIC_REGION
+    value: me-central1

@@ -1,0 +1,50 @@
+// TravGo 2.0 — Architecture internationale Continent → Pays → Ville + villes départ KSA
+export const departureCitiesKSA = [
+  { id:"ruh", name:"Riyad", nameAr:"الرياض", iata:"RUH", region:"Najd" },
+  { id:"jed", name:"Jeddah", nameAr:"جدة", iata:"JED", region:"Makkah" },
+  { id:"dmm", name:"Dammam", nameAr:"الدمام", iata:"DMM", region:"Eastern" },
+  { id:"med", name:"Medina", nameAr:"المدينة", iata:"MED", region:"Madinah" },
+  { id:"mkk", name:"Mecca", nameAr:"مكة", iata:"MKK", region:"Makkah" },
+  { id:"abh", name:"Abha", nameAr:"أبها", iata:"AHB", region:"Asir" },
+  { id:"tab", name:"Tabuk", nameAr:"تبوك", iata:"TUU", region:"Tabuk" },
+  { id:"tyf", name:"Taif", nameAr:"الطائف", iata:"TIF", region:"Makkah" },
+  { id:"ynb", name:"Yanbu", nameAr:"ينبع", iata:"YNB", region:"Madinah" },
+  { id:"khb", name:"Al Khobar", nameAr:"الخبر", iata:"DMM", region:"Eastern" },
+  { id:"hail", name:"Hail", nameAr:"حائل", iata:"HAS", region:"Hail" },
+  { id:"jiz", name:"Jizan", nameAr:"جازان", iata:"GIZ", region:"Jizan" },
+];
+
+export const worldwideDestinations = [
+  { continent:"Europe", country:"France", code:"FR", cities:["Paris","Nice","Lyon","Marseille"], trends: 98 },
+  { continent:"Europe", country:"Royaume-Uni", code:"GB", cities:["London","Manchester","Edinburgh"], trends: 85 },
+  { continent:"Europe", country:"Italie", code:"IT", cities:["Rome","Milan","Venice","Florence"], trends: 88 },
+  { continent:"Europe", country:"Espagne", code:"ES", cities:["Barcelona","Madrid","Seville","Malaga"], trends: 82 },
+  { continent:"Europe", country:"Turquie", code:"TR", cities:["Istanbul","Antalya","Cappadocia","Ankara"], trends: 94 },
+  { continent:"Moyen-Orient", country:"Émirats arabes unis", code:"AE", cities:["Dubai","Abu Dhabi","Sharjah"], trends: 96 },
+  { continent:"Moyen-Orient", country:"Qatar", code:"QA", cities:["Doha"], trends: 70 },
+  { continent:"Moyen-Orient", country:"Égypte", code:"EG", cities:["Cairo","Sharm El Sheikh","Hurghada"], trends: 78 },
+  { continent:"Asie", country:"Maldives", code:"MV", cities:["Malé","Hulhumalé"], trends: 91 },
+  { continent:"Asie", country:"Thaïlande", code:"TH", cities:["Bangkok","Phuket","Chiang Mai","Krabi"], trends: 89 },
+  { continent:"Asie", country:"Indonésie", code:"ID", cities:["Bali","Jakarta"], trends: 87 },
+  { continent:"Asie", country:"Malaisie", code:"MY", cities:["Kuala Lumpur","Langkawi","Penang"], trends: 75 },
+  { continent:"Asie", country:"Japon", code:"JP", cities:["Tokyo","Osaka","Kyoto"], trends: 84 },
+  { continent:"Asie", country:"Chine", code:"CN", cities:["Beijing","Shanghai","Guangzhou"], trends: 72 },
+  { continent:"Asie", country:"Corée du Sud", code:"KR", cities:["Seoul","Busan"], trends: 74 },
+  { continent:"Amérique", country:"États-Unis", code:"US", cities:["New York","Los Angeles","Miami","Orlando","Las Vegas"], trends: 90 },
+  { continent:"Amérique", country:"Canada", code:"CA", cities:["Toronto","Vancouver","Montreal"], trends: 68 },
+  { continent:"Océanie", country:"Australie", code:"AU", cities:["Sydney","Melbourne","Brisbane"], trends: 66 },
+  { continent:"Afrique", country:"Afrique du Sud", code:"ZA", cities:["Cape Town","Johannesburg"], trends: 62 },
+  { continent:"Afrique", country:"Maroc", code:"MA", cities:["Marrakech","Casablanca","Agadir","Tangier"], trends: 80 },
+  { continent:"Afrique", country:"Seychelles", code:"SC", cities:["Victoria","Mahé"], trends: 64 },
+  { continent:"Afrique", country:"Île Maurice", code:"MU", cities:["Port Louis"], trends: 61 },
+];
+
+export const currencies = [
+  { code:"SAR", name:"Riyal saoudien", symbol:"ر.س", default:true, rate:1 },
+  { code:"USD", name:"Dollar", symbol:"$", rate:0.27 },
+  { code:"EUR", name:"Euro", symbol:"€", rate:0.25 },
+  { code:"GBP", name:"Livre", symbol:"£", rate:0.21 },
+  { code:"AED", name:"Dirham", symbol:"AED", rate:0.98 },
+  { code:"TRY", name:"Livre turque", symbol:"₺", rate:8.5 },
+  { code:"MAD", name:"Dirham marocain", symbol:"MAD", rate:2.7 },
+];
