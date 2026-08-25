@@ -73,17 +73,13 @@ export default function Header() {
 
         {/* Actions Desktop */}
         <div className="hidden lg:flex items-center gap-2">
-          <div className="flex items-center gap-1.5 p-1 rounded-full bg-white/60 dark:bg-white/[0.06] backdrop-blur-md border border-white/50 dark:border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.6)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
-            <select
-              value={lang}
-              onChange={(e) => setLang(e.target.value as any)}
-              className="bg-transparent px-2.5 py-1.5 text-[13px] font-black text-[#0F172A] dark:text-white focus:outline-none cursor-pointer"
-            >
-              <option value="fr" className="text-black">FR</option>
-              <option value="ar" className="text-black">العربية</option>
-              <option value="en" className="text-black">EN</option>
-            </select>
-            <div className="w-px h-5 bg-[#E2E8F0] dark:bg-white/10" />
+          <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-md border border-white/60 dark:border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.8)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.06)]">
+            <div className="flex items-center gap-1">
+              <button onClick={() => setLang("fr")} className={`h-7 px-3 rounded-full text-xs font-black tracking-wide transition-all ${lang === "fr" ? "bg-[#0F172A] dark:bg-white text-white dark:text-black shadow-[0_2px_8px_rgba(0,0,0,0.12)]" : "text-[#475569] dark:text-[#94A3B8] hover:bg-white dark:hover:bg-white/10 hover:text-[#0F172A] dark:hover:text-white"}`}>FR</button>
+              <button onClick={() => setLang("ar")} className={`h-7 px-3 rounded-full text-xs font-black transition-all ${lang === "ar" ? "bg-[#0F172A] dark:bg-white text-white dark:text-black shadow-[0_2px_8px_rgba(0,0,0,0.12)]" : "text-[#475569] dark:text-[#94A3B8] hover:bg-white dark:hover:bg-white/10 hover:text-[#0F172A] dark:hover:text-white"}`}>العربية</button>
+              <button onClick={() => setLang("en")} className={`h-7 px-3 rounded-full text-xs font-black tracking-wide transition-all ${lang === "en" ? "bg-[#0F172A] dark:bg-white text-white dark:text-black shadow-[0_2px_8px_rgba(0,0,0,0.12)]" : "text-[#475569] dark:text-[#94A3B8] hover:bg-white dark:hover:bg-white/10 hover:text-[#0F172A] dark:hover:text-white"}`}>EN</button>
+            </div>
+            <div className="w-px h-6 bg-[#E2E8F0]/80 dark:bg-white/10 mx-1" />
             <button
               onClick={toggle}
               aria-label="toggle dark"
@@ -97,11 +93,14 @@ export default function Header() {
             <div className="flex items-center gap-2 ml-1">
               <Link
                 href={user.role === "ADMIN" ? "/admin" : user.role === "PROVIDER" || user.role === "PROVIDER_PENDING" ? "/provider/dashboard" : "/dashboard"}
-                className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-full bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-md border border-white/60 dark:border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] hover:-translate-y-[1px] transition-all"
+                className="flex items-center gap-2.5 pl-1.5 pr-3.5 py-1.5 rounded-full bg-white/85 dark:bg-[#0F172A]/85 backdrop-blur-md border border-white/60 dark:border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.8)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.35)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-[1px] transition-all"
               >
-                <img src={`https://i.pravatar.cc/100?u=${user.email}`} alt={user.name} className="h-8 w-8 rounded-full object-cover border-2 border-white dark:border-[#1E293B] shadow-sm" />
-                <span className="text-[13px] font-black text-[#0F172A] dark:text-white max-w-[110px] truncate">{user.name || user.email?.split("@")[0]}</span>
-                <span className="text-[10px] font-black tracking-widest px-1.5 py-0.5 rounded-full bg-[#0E7C6B] dark:bg-[#14B8A6] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">{user.role || "USER"}</span>
+                <img src={user.photoURL || user.avatar || `https://i.pravatar.cc/100?u=${user.email}`} alt={user.name} className="h-8 w-8 rounded-full object-cover border-2 border-white dark:border-[#1E293B] shadow-sm" />
+                <div className="flex flex-col leading-none">
+                  <span className="text-[14px] font-bold text-[#0F172A] dark:text-white max-w-[160px] truncate leading-tight">{user.name && user.name !== "user" ? user.name : (user.email?.split("@")[0] || "Utilisateur")}</span>
+                  <span className="text-[10px] font-medium text-[#64748B] dark:text-[#94A3B8] -mt-0.5">{user.email}</span>
+                </div>
+                <span className="text-[10px] font-black tracking-widest px-2 py-0.5 rounded-full bg-[#0E7C6B] dark:bg-[#14B8A6] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ml-1">{user.role || "USER"}</span>
               </Link>
               <button
                 onClick={async () => { await signOut(auth); localStorage.removeItem("travgo-user"); localStorage.removeItem("travgo-role"); location.href = "/"; }}
@@ -156,11 +155,15 @@ export default function Header() {
             <div className="px-3 pb-3 flex gap-2">
               {user ? (
                 <>
-                  <Link href={user.role === "ADMIN" ? "/admin" : user.role === "PROVIDER" ? "/provider/dashboard" : "/dashboard"} onClick={() => setOpen(false)} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-[#0F172A] dark:bg-white text-white dark:text-black font-black text-sm shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
-                    <img src={`https://i.pravatar.cc/100?u=${user.email}`} alt="" className="h-6 w-6 rounded-full border-2 border-white/20" />
-                    <span className="truncate">{user.name || user.email}</span>
+                  <Link href={user.role === "ADMIN" ? "/admin" : user.role === "PROVIDER" || user.role === "PROVIDER_PENDING" ? "/provider/dashboard" : "/dashboard"} onClick={() => setOpen(false)} className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-full bg-[#0F172A] dark:bg-white text-white dark:text-black font-bold text-sm shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+                    <img src={user.photoURL || user.avatar || `https://i.pravatar.cc/100?u=${user.email}`} alt="" className="h-7 w-7 rounded-full border-2 border-white/20 object-cover" />
+                    <div className="flex-1 text-left min-w-0 leading-tight">
+                      <div className="text-[13px] font-bold truncate">{user.name && user.name !== "user" ? user.name : (user.email?.split("@")[0] || "Utilisateur")}</div>
+                      <div className="text-[10px] opacity-70 truncate">{user.email}</div>
+                    </div>
+                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-white/15 border border-white/20">{user.role || "USER"}</span>
                   </Link>
-                  <button onClick={async () => { await signOut(auth); localStorage.removeItem("travgo-user"); localStorage.removeItem("travgo-role"); setUser(null); setOpen(false); location.href = "/"; }} className="px-5 py-3 rounded-full border border-[#E2E8F0] dark:border-white/10 dark:text-white font-bold text-sm bg-white/50 dark:bg-white/5">Déconnexion</button>
+                  <button onClick={async () => { await signOut(auth); localStorage.removeItem("travgo-user"); localStorage.removeItem("travgo-role"); setUser(null); setOpen(false); location.href = "/"; }} className="px-4 py-3 rounded-full border border-[#E2E8F0] dark:border-white/10 dark:text-white font-bold text-sm bg-white/50 dark:bg-white/5">Déconnexion</button>
                 </>
               ) : (
                 <>

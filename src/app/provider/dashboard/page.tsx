@@ -1,126 +1,259 @@
 "use client";
-import { useState } from "react";
-import Link from "next/link";
-import { subscriptionPlans } from "@/lib/data";
-import { AIStatusBadge, AIWarning } from "@/components/ui/AIStatus";
-import { AICreationAssistant, AIMarketing, AIInsights } from "@/components/agency/AIAssistant";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc, updateDoc, collection, query, where, onSnapshot, addDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, db, storage } from "@/lib/firebase/config";
 import { useI18n } from "@/lib/i18n/provider";
+import Link from "next/link";
 
 export default function ProviderDashboard() {
   const { t } = useI18n();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [active, setActive] = useState("overview");
-  const [offerStatus, setOfferStatus] = useState("AI_CHECKING");
-  const [showIAAlert, setShowIAAlert] = useState(false);
+  const [offers, setOffers] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [msg, setMsg] = useState("");
+
+  // Profil form
+  const [editName, setEditName] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editWebsite, setEditWebsite] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Création offre
+  const [offerTitle, setOfferTitle] = useState("");
+  const [offerDest, setOfferDest] = useState("Paris");
+  const [offerPrice, setOfferPrice] = useState("");
+  const [offerDuration, setOfferDuration] = useState("7 jours");
+  const [offerImage, setOfferImage] = useState<File | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        const snap = await getDoc(doc(db, "users", fbUser.uid));
+        const data = snap.exists() ? { uid: fbUser.uid, email: fbUser.email, ...snap.data() } : { uid: fbUser.uid, email: fbUser.email, name: fbUser.displayName, role: "PROVIDER_PENDING" };
+        setUser(data);
+        setEditName((data as any).name || "");
+        setEditCity((data as any).city || "");
+        setEditPhone((data as any).phone || "");
+        setEditWebsite((data as any).website || "");
+        setEditDesc((data as any).description || "");
+      } else {
+        try { const raw = localStorage.getItem("travgo-user"); setUser(raw ? JSON.parse(raw) : null); } catch { setUser(null); }
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  // Temps réel offres du prestataire
+  useEffect(() => {
+    if (!user?.uid) return;
+    const q = query(collection(db, "offers"), where("providerId", "==", user.uid));
+    const unsub = onSnapshot(q, (snap) => setOffers(snap.docs.map(d => ({ id: d.id, ...d.data() }))), () => setOffers([]));
+    const q2 = query(collection(db, "quoteRequests"), where("providerId", "==", user.uid));
+    const un2 = onSnapshot(q2, (snap) => setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() }))), () => {});
+    return () => { unsub(); un2(); };
+  }, [user?.uid]);
+
+  const handleSaveProfil = async () => {
+    if (!user?.uid) return;
+    setSaving(true); setMsg("");
+    try {
+      let logoURL = user.logo || user.photoURL || null;
+      if (logoFile) {
+        const r = ref(storage, `providers/${user.uid}/logo.jpg`);
+        await uploadBytes(r, logoFile);
+        logoURL = await getDownloadURL(r);
+      }
+      await updateDoc(doc(db, "users", user.uid), { name: editName, city: editCity, phone: editPhone.replace(/\D/g, ""), website: editWebsite, description: editDesc, ...(logoURL ? { logo: logoURL, photoURL: logoURL } : {}), updatedAt: serverTimestamp() });
+      setUser({ ...user, name: editName, city: editCity, phone: editPhone, website: editWebsite, description: editDesc, logo: logoURL });
+      localStorage.setItem("travgo-user", JSON.stringify({ ...user, name: editName }));
+      setMsg("✓ Profil mis à jour");
+      setTimeout(() => setMsg(""), 2000);
+    } catch (e: any) { setMsg("✗ " + e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleCreateOffer = async () => {
+    if (!user?.uid) return;
+    if (user.role === "PROVIDER_PENDING") { setMsg("⏳ En attente d'activation admin — vous ne pouvez pas publier"); return; }
+    if (!offerTitle || !offerPrice) { setMsg("✗ Titre + prix requis"); return; }
+    setCreating(true);
+    try {
+      let imageURL = "https://picsum.photos/800/600";
+      if (offerImage) {
+        const r = ref(storage, `offers/${user.uid}/${Date.now()}.jpg`);
+        await uploadBytes(r, offerImage);
+        imageURL = await getDownloadURL(r);
+      }
+      await addDoc(collection(db, "offers"), {
+        title: offerTitle, destination: offerDest, country: offerDest, cityFrom: editCity || "Riyad",
+        image: imageURL, images: [imageURL],
+        providerId: user.uid, provider: { name: editName || user.name, logo: user.logo || "", city: editCity },
+        price: Number(offerPrice), currency: "SAR", duration: offerDuration, durationDays: parseInt(offerDuration) || 7,
+        dates: "Disponible", includes: [], category: "Culture", verified: false, sponsored: false,
+        saves: 0, views: 0, createdAt: serverTimestamp(),
+      });
+      setMsg("✓ Offre créée — en attente modération admin");
+      setOfferTitle(""); setOfferPrice(""); setOfferImage(null);
+      setTimeout(() => setMsg(""), 2000);
+    } catch (e: any) { setMsg("✗ " + e.message); }
+    finally { setCreating(false); }
+  };
+
+  const delOffer = async (id: string) => { if (!confirm("Supprimer cette offre ?")) return; await deleteDoc(doc(db, "offers", id)); };
+
+  if (loading) return <div className="mx-auto max-w-[1280px] px-4 py-10 text-center text-sm">Chargement...</div>;
+  if (!user) return <div className="mx-auto max-w-[640px] px-4 py-16 text-center"><div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-8"><h2 className="font-black">Non connecté</h2><Link href="/login" className="mt-4 inline-block px-6 py-2 rounded-full bg-[#0E7C6B] text-white font-bold">Se connecter</Link></div></div>;
+
+  const isPending = user.role === "PROVIDER_PENDING";
+  const isProvider = user.role === "PROVIDER" || user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+
   const menu = [
-    ["overview", (t as any).providerDashboard.menu?.[0] || "Overview"],["offers", (t as any).providerDashboard.menu?.[1] || "Mes offres"],["create", (t as any).providerDashboard.menu?.[2] || "Créer une offre"],["reels","Reels"],["leads","Leads"],["demandes","Demandes"],["analytics","Analytics"],["ia","IA"],["marketing","Marketing"],["profil","Profil"],["abonnement","Abonnement"],["facturation","Facturation"],["parametres","Paramètres"]
+    ["overview", (t as any).providerDashboard.menu?.[0] || "Overview"],
+    ["offers", (t as any).providerDashboard.menu?.[1] || "Mes offres"],
+    ["create", (t as any).providerDashboard.menu?.[2] || "Créer une offre"],
+    ["leads", "Leads"],
+    ["profil", "Profil"],
   ];
-  const plans2 = [
-    { id:"basic", name:"BASIC", price:750, offers:4, reels:2, ia:false },
-    { id:"premium", name:"PREMIUM", price:1000, offers:10, reels:5, ia:true },
-    { id:"pro", name:"PRO", price:1250, offers:20, reels:15, ia:true },
-  ];
+
+  if (isPending) {
+    return (
+      <div className="mx-auto max-w-[640px] px-4 py-10">
+        <div className="bg-[#FFFBEB] dark:bg-[#1A2332] border border-[#FDE68A] dark:border-[#78350F] rounded-[20px] p-8 text-center">
+          <div className="text-3xl mb-3">⏳</div>
+          <h1 className="text-xl font-black dark:text-white">En attente d'activation admin</h1>
+          <p className="text-sm text-[#92400E] dark:text-[#FDBA74] mt-2">Votre compte prestataire <b>{user.name}</b> ({user.email}) est en cours de vérification. Vous serez notifié par email après approbation. Votre dashboard sera alors pleinement fonctionnel.</p>
+          <div className="mt-4 p-3 rounded-2xl bg-white dark:bg-[#0F172A] border text-left text-xs">
+            <div><b>Nom:</b> {user.name}</div><div><b>Email:</b> {user.email}</div><div><b>Ville:</b> {user.city || "—"}</div><div><b>Rôle:</b> {user.role}</div>
+          </div>
+          <button onClick={async()=>{await signOut(auth); localStorage.clear(); location.href="/";}} className="mt-4 px-6 py-2 rounded-full border text-sm font-bold">Déconnexion</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isProvider) return <div className="mx-auto max-w-[640px] px-4 py-10 text-center"><div className="bg-white border rounded-[20px] p-8"><h2 className="font-black">Accès prestataire requis</h2><p className="text-sm text-[#64748B] mt-2">Votre rôle actuel: {user.role} — contactez l&apos;admin.</p></div></div>;
+
   return (
     <div className="mx-auto max-w-[1280px] px-4 lg:px-6 py-6">
       <div className="flex flex-col lg:flex-row gap-6">
         <aside className="lg:w-[260px] shrink-0">
-          <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border border-[#E2E8F0] dark:border-[#1E293B] p-4 sticky top-[76px]">
-            <div className="font-black mb-3 dark:text-white flex items-center gap-2"><span className="h-7 w-7 rounded-lg bg-[#0E7C6B] flex items-center justify-center text-white text-xs">🏢</span>Rowad Al Siyaha <span className="text-xs bg-[#ECFDF5] text-[#065F46] px-1.5 py-0.5 rounded-full">PRO</span></div>
+          <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-4 sticky top-[76px]">
+            <div className="flex items-center gap-3 mb-3">
+              <img src={user.logo || user.photoURL || `https://i.pravatar.cc/100?u=${user.email}`} alt={user.name} className="h-10 w-10 rounded-xl object-cover border" />
+              <div className="flex-1 min-w-0"><div className="font-black text-sm dark:text-white truncate">{user.name || "Prestataire"}</div><div className="text-xs text-[#64748B] truncate">{user.email}</div><span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#0E7C6B] text-white">{user.role}</span></div>
+            </div>
             <nav className="space-y-1 text-sm font-semibold">
               {menu.map(([id,label])=>(
-                <button key={id} onClick={()=>setActive(id)} className={`w-full text-left px-3 py-2 rounded-full flex justify-between ${active===id?"bg-[#0F172A] dark:bg-white dark:text-black text-white":"hover:bg-[#F1F5F9] dark:hover:bg-[#1A2332] dark:text-[#94A3B8]"}`}>{label}{id==="ia" && <span className="text-xs bg-[#14B8A6] text-white px-1.5 rounded-full">IA</span>}</button>
+                <button key={id} onClick={()=>setActive(id)} className={`w-full text-left px-3 py-2 rounded-full flex justify-between ${active===id?"bg-[#0F172A] dark:bg-white dark:text-black text-white":"hover:bg-[#F1F5F9] dark:hover:bg-[#1A2332] dark:text-[#94A3B8]"}`}>{label}</button>
               ))}
             </nav>
-            <div className="mt-4 rounded-2xl bg-[#E6F4F1] dark:bg-[#1A2332] p-4 border dark:border-[#1E293B]">
-              <div className="text-xs font-bold text-[#0E7C6B] dark:text-[#6EE7B7]">Plan PRO</div><div className="text-sm font-bold dark:text-white">7/20 offres • 5/15 Reels</div>
-              <div className="text-xs text-[#64748B] dark:text-[#94A3B8]">IA + Marketing inclus</div>
-              <Link href="#plans" className="text-xs font-bold text-[#0E7C6B] underline">Gérer →</Link>
-            </div>
+            <button onClick={async()=>{await signOut(auth); localStorage.clear(); location.href="/";}} className="w-full mt-3 h-9 rounded-full border text-xs font-bold">Déconnexion</button>
+            {msg && <div className="mt-3 text-xs p-2 rounded-xl bg-[#ECFDF5] text-[#065F46] text-center">{msg}</div>}
           </div>
         </aside>
         <div className="flex-1 space-y-6">
           {active==="overview" && (
             <>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  [(t as any).providerDashboard.impressions,"12.4k","+8%"],[(t as any).providerDashboard.whatsappClicks,"342","+12%"],[(t as any).providerDashboard.leads,"28","+5"],[(t as any).providerDashboard.conversion,"18%","+2.1%"],
-                ].map(([k,v,d])=>(
-                  <div key={k as string} className="bg-white dark:bg-[#0F172A] rounded-[20px] border border-[#E2E8F0] dark:border-[#1E293B] p-5 card-hover">
-                    <div className="text-xs text-[#64748B] dark:text-[#94A3B8]">{k as string}</div><div className="text-2xl font-black dark:text-white">{v as string}</div><div className="text-xs text-[#0E7C6B] dark:text-[#14B8A6] font-bold">{d as string}</div>
-                  </div>
-                ))}
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-5"><div className="text-xs text-[#64748B]">Offres actives</div><div className="text-2xl font-black dark:text-white">{offers.length}</div><div className="text-xs text-[#0E7C6B]">{offers.length} publiée(s)</div></div>
+                <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-5"><div className="text-xs text-[#64748B]">Leads</div><div className="text-2xl font-black dark:text-white">{leads.length}</div><div className="text-xs text-[#64748B]">demandes</div></div>
+                <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-5"><div className="text-xs text-[#64748B]">Vues</div><div className="text-2xl font-black dark:text-white">{offers.reduce((a,b)=>a+(b.views||0),0)}</div><div className="text-xs text-[#64748B]">total</div></div>
               </div>
-              <AIInsights />
-              <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border border-[#E2E8F0] dark:border-[#1E293B] p-6">
-                <div className="flex items-center justify-between"><h3 className="font-bold dark:text-white">Performance 30 jours</h3><span className="text-xs bg-[#F1F5F9] dark:bg-[#1A2332] dark:text-white px-3 py-1 rounded-full">Nov 2026</span></div>
-                <div className="mt-4 h-[100px] flex items-end gap-2">{[40,65,50,80,60,90,75,55,85,70,60,95].map((h,i)=>(<div key={i} className="flex-1 rounded-t-xl bg-[#0E7C6B] dark:bg-[#14B8A6]" style={{height:h}} />))}</div>
+              <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-6">
+                <h3 className="font-bold dark:text-white">Mes offres récentes (temps réel)</h3>
+                {offers.length===0 ? <div className="text-sm text-[#64748B] py-6 text-center">Aucune offre — <button onClick={()=>setActive("create")} className="text-[#0E7C6B] underline">Créer une offre</button></div> : (
+                  <div className="mt-3 space-y-2">
+                    {offers.slice(0,5).map((o:any)=>(
+                      <div key={o.id} className="flex items-center gap-3 p-3 rounded-2xl border">
+                        <img src={o.image} alt={o.title} className="h-12 w-16 rounded-xl object-cover" />
+                        <div className="flex-1 min-w-0"><div className="font-bold text-sm truncate dark:text-white">{o.title}</div><div className="text-xs text-[#64748B]">{o.destination} • {o.price} SAR</div></div>
+                        <button onClick={()=>delOffer(o.id)} className="px-3 py-1 rounded-full border text-xs">Supprimer</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}
-          {active==="create" && (
-            <div className="space-y-4">
-              <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border border-[#E2E8F0] dark:border-[#1E293B] p-6">
-                <h3 className="font-bold dark:text-white flex items-center gap-2">Créer une offre — Workflow 2.0 <AIStatusBadge status={offerStatus as any}/></h3>
-                <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Riyad → Paris • IA vérifie cohérence titre/destination vs médias avant publication.</p>
-                <div className="grid lg:grid-cols-2 gap-4 mt-4">
-                  <div className="space-y-3">
-                    <select className="w-full h-11 rounded-full border px-3 dark:bg-[#1A2332] dark:text-white"><option>Riyad → Paris</option><option>Jeddah → Istanbul</option><option>Dammam → Maldives</option></select>
-                    <input placeholder="Titre offre" defaultValue="Paris 7 jours — Vol + Hôtel 4★" className="w-full h-11 rounded-full border px-3 dark:bg-[#1A2332] dark:text-white" />
-                    <div className="p-3 rounded-2xl border-2 border-dashed flex flex-col items-center gap-2"><span className="text-2xl">📸</span><span className="text-xs">Upload photos/vidéos (IA analysera)</span><button onClick={()=>{ setOfferStatus("AI_CHECKING"); setTimeout(()=>{ setOfferStatus("AI_WARNING"); setShowIAAlert(true); }, 1500); }} className="px-4 py-2 rounded-full bg-[#0F172A] dark:bg-white dark:text-black text-white text-xs">Uploader & analyser IA</button></div>
-                  </div>
-                  <AICreationAssistant onGenerate={()=>{}} />
+          {active==="offers" && (
+            <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-6">
+              <h3 className="font-bold dark:text-white">Mes offres — {offers.length}</h3>
+              {offers.length===0 ? <div className="text-sm text-[#64748B] py-6 text-center">Aucune offre</div> : (
+                <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                  {offers.map((o:any)=>(
+                    <div key={o.id} className="rounded-2xl border overflow-hidden">
+                      <img src={o.image} alt={o.title} className="w-full h-32 object-cover" />
+                      <div className="p-3"><div className="font-bold text-sm dark:text-white truncate">{o.title}</div><div className="text-xs text-[#64748B]">{o.destination} • {o.price} SAR</div><button onClick={()=>delOffer(o.id)} className="mt-2 w-full h-8 rounded-full border text-xs">Supprimer</button></div>
+                    </div>
+                  ))}
                 </div>
-                {showIAAlert && <div className="mt-4"><AIWarning reason="Destination indiquée: Paris, mais une photo semble montrer New York (confiance 87%)." score={0.87} /><div className="flex gap-2 mt-3"><button onClick={()=>{ setOfferStatus("ADMIN_REVIEW"); setShowIAAlert(false); }} className="px-4 py-2 rounded-full bg-[#F59E0B] text-white text-sm">Envoyer en revue admin</button><button onClick={()=>{ setOfferStatus("DRAFT"); setShowIAAlert(false); }} className="px-4 py-2 rounded-full border dark:text-white text-sm">Corriger médias</button></div></div>}
-                <div className="flex gap-2 mt-4"><span className="text-xs px-2 py-1 rounded-full bg-[#F1F5F9] dark:bg-[#1A2332] dark:text-white">Draft</span><span className="text-xs">→</span><span className="text-xs px-2 py-1 rounded-full bg-[#EFF6FF]">AI Checking</span><span className="text-xs">→</span><span className="text-xs px-2 py-1 rounded-full bg-[#ECFDF5]">Published</span></div>
-              </div>
-              <AIMarketing />
+              )}
             </div>
           )}
-          {active==="offers" && (
-            <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border border-[#E2E8F0] dark:border-[#1E293B] p-6">
-              <h3 className="font-bold dark:text-white">Mes offres — Statuts IA</h3>
-              <div className="mt-4 space-y-3">
-                {[
-                  { title:"Paris 7j", status:"AI_CHECKING", dest:"Riyad→Paris" },
-                  { title:"Istanbul 5j", status:"PUBLISHED", dest:"Jeddah→Istanbul" },
-                  { title:"Maldives 6j", status:"AI_WARNING", dest:"Dammam→Malé" },
-                ].map(o=>(
-                  <div key={o.title} className="flex items-center gap-3 p-3 rounded-2xl border dark:border-[#1E293B] dark:bg-[#1A2332]">
-                    <div className="flex-1 dark:text-white"><div className="font-bold text-sm">{o.title} • {o.dest}</div></div><AIStatusBadge status={o.status as any} />
-                  </div>
-                ))}
+          {active==="create" && (
+            <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-6">
+              <h3 className="font-bold dark:text-white">Créer une offre</h3>
+              <div className="grid gap-3 mt-4">
+                <input value={offerTitle} onChange={e=>setOfferTitle(e.target.value)} placeholder="Titre (ex: Riyad → Paris 7j)" className="h-11 rounded-full border px-4 bg-[#F8FAFB] dark:bg-[#1A2332] dark:text-white" />
+                <div className="grid grid-cols-2 gap-3">
+                  <select value={offerDest} onChange={e=>setOfferDest(e.target.value)} className="h-11 rounded-full border px-3 bg-white dark:bg-[#1A2332] dark:text-white"><option>Paris</option><option>Istanbul</option><option>Dubai</option><option>Maldives</option><option>Bali</option></select>
+                  <input value={offerPrice} onChange={e=>setOfferPrice(e.target.value)} placeholder="Prix SAR" type="number" className="h-11 rounded-full border px-4 bg-[#F8FAFB] dark:bg-[#1A2332] dark:text-white" />
+                </div>
+                <input value={offerDuration} onChange={e=>setOfferDuration(e.target.value)} placeholder="Durée (ex: 7 jours)" className="h-11 rounded-full border px-4 bg-[#F8FAFB] dark:bg-[#1A2332] dark:text-white" />
+                <label className="p-3 rounded-2xl border-2 border-dashed flex flex-col items-center gap-2 cursor-pointer">
+                  <span className="text-2xl">📸</span><span className="text-xs">{offerImage ? offerImage.name : "Photo offre (optionnel)"}</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={e=>setOfferImage(e.target.files?.[0]||null)} />
+                </label>
+                <button onClick={handleCreateOffer} disabled={creating} className="h-11 rounded-full bg-[#0E7C6B] text-white font-bold disabled:opacity-50">{creating?"...":"Publier l'offre →"}</button>
+                {msg && <div className="text-sm p-2 rounded-xl bg-[#F1F5F9] text-center">{msg}</div>}
               </div>
             </div>
           )}
           {active==="leads" && (
-            <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border border-[#E2E8F0] dark:border-[#1E293B] p-6">
-              <h3 className="font-bold dark:text-white">Mes prospects — WhatsApp Analytics</h3>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">Chaque clic WhatsApp enregistré: OfferID, AgencyID, Timestamp, Device, City</p>
-              <div className="mt-4 space-y-2">
-                {[
-                  { name:"Fahad — AlUla 3j", type:"WhatsApp", time:"Il y a 2h", dest:"AlUla" },
-                  { name:"Yasir — Paris 7j", type:"Devis", time:"Il y a 5h", dest:"Paris" },
-                ].map(r=>(
-                  <div key={r.name} className="flex items-center gap-3 p-3 rounded-2xl border dark:border-[#1E293B]"><div className="h-10 w-10 rounded-full bg-[#E6F4F1] flex items-center justify-center">👤</div><div className="flex-1 dark:text-white"><div className="font-bold text-sm">{r.name}</div><div className="text-xs text-[#64748B]">{r.type} • {r.dest} • {r.time}</div></div><span className="px-2 py-1 rounded-full bg-[#25D366] text-white text-xs">WhatsApp</span></div>
-                ))}
+            <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-6">
+              <h3 className="font-bold dark:text-white">Leads / Demandes</h3>
+              {leads.length===0 ? <div className="text-sm text-[#64748B] py-6 text-center">Aucune demande pour vous</div> : (
+                <div className="space-y-2 mt-3">
+                  {leads.map((l:any)=>(
+                    <div key={l.id} className="p-3 rounded-2xl border flex justify-between items-center">
+                      <div><div className="font-bold text-sm dark:text-white">{l.destination || l.dest}</div><div className="text-xs text-[#64748B]">{l.budget} • {l.travelers} voyageurs</div></div>
+                      <span className="text-xs px-2 py-1 rounded-full bg-[#E6F4F1] text-[#0E7C6B]">{l.status || "Nouveau"}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {active==="profil" && (
+            <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border p-6">
+              <h3 className="font-bold dark:text-white">Profil prestataire — Modifier mes données</h3>
+              <div className="flex items-center gap-4 mt-4">
+                <img src={user.logo || user.photoURL || `https://i.pravatar.cc/100?u=${user.email}`} alt="" className="h-20 w-20 rounded-2xl object-cover border" />
+                <label className="px-4 py-2 rounded-full border text-sm font-bold cursor-pointer dark:text-white">Changer logo<input type="file" accept="image/*" className="hidden" onChange={e=>setLogoFile(e.target.files?.[0]||null)} /></label>
+                {logoFile && <span className="text-xs text-[#0E7C6B]">{logoFile.name}</span>}
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3 mt-4">
+                <div><label className="text-xs font-bold">Nom agence</label><input value={editName} onChange={e=>setEditName(e.target.value)} className="w-full mt-1 h-11 rounded-full border px-4 bg-[#F8FAFB] dark:bg-[#1A2332] dark:text-white" /></div>
+                <div><label className="text-xs font-bold">Ville</label><input value={editCity} onChange={e=>setEditCity(e.target.value)} className="w-full mt-1 h-11 rounded-full border px-4 bg-[#F8FAFB] dark:bg-[#1A2332] dark:text-white" /></div>
+                <div><label className="text-xs font-bold">Téléphone</label><input value={editPhone} onChange={e=>setEditPhone(e.target.value)} className="w-full mt-1 h-11 rounded-full border px-4 bg-[#F8FAFB] dark:bg-[#1A2332] dark:text-white" /></div>
+                <div><label className="text-xs font-bold">Site web</label><input value={editWebsite} onChange={e=>setEditWebsite(e.target.value)} className="w-full mt-1 h-11 rounded-full border px-4 bg-[#F8FAFB] dark:bg-[#1A2332] dark:text-white" /></div>
+                <div className="sm:col-span-2"><label className="text-xs font-bold">Description</label><textarea value={editDesc} onChange={e=>setEditDesc(e.target.value)} rows={3} className="w-full mt-1 rounded-2xl border p-3 bg-[#F8FAFB] dark:bg-[#1A2332] dark:text-white text-sm" /></div>
+              </div>
+              <button onClick={handleSaveProfil} disabled={saving} className="mt-4 px-6 h-11 rounded-full bg-[#0E7C6B] text-white font-bold disabled:opacity-50">{saving?"...":"Enregistrer"}</button>
+              <div className="mt-3 text-xs p-2 rounded-xl bg-[#F8FAFB] dark:bg-[#1A2332] border">
+                <div><b>Email:</b> {user.email}</div><div><b>UID:</b> {user.uid}</div><div><b>Rôle:</b> {user.role}</div>
               </div>
             </div>
           )}
-          {["reels","demandes","analytics","ia","marketing","profil","abonnement","facturation","parametres"].includes(active) && (
-            <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border border-[#E2E8F0] dark:border-[#1E293B] p-10 text-center">
-              <div className="text-3xl mb-2">✨</div><div className="font-bold dark:text-white capitalize">{active} — Module 2.0</div><p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Fonctionnalité {active} prête (IA, WhatsApp tracking, abonnements BASIC/PREMIUM/PRO configurables depuis admin).</p>
-            </div>
-          )}
-          <div id="plans" className="bg-white dark:bg-[#0F172A] rounded-[20px] border border-[#E2E8F0] dark:border-[#1E293B] p-6">
-            <h3 className="font-bold dark:text-white">Abonnements — BASIC / PREMIUM / PRO (configurables admin)</h3>
-            <div className="grid lg:grid-cols-3 gap-4 mt-4">
-              {plans2.map(p=>(
-                <div key={p.id} className={`rounded-[20px] border p-5 ${p.name==="PREMIUM"?"border-[#0E7C6B] bg-[#F0FDF4] dark:bg-[#1A2332]":"border-[#E2E8F0] dark:border-[#1E293B] dark:bg-[#1A2332]"}`}>
-                  <div className="font-black dark:text-white">{p.name}</div><div className="text-xl font-black dark:text-white">{p.price} SAR</div><div className="text-xs text-[#64748B]">{p.offers} offres • {p.reels} Reels • IA: {p.ia?"Oui":"Non"}</div>
-                  <button className="w-full mt-3 h-9 rounded-full border dark:text-white text-sm">Configurer (admin)</button>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
 import { offers as initialOffers, providers as initialProviders, categories as initialCats, destinations as initialDests, reels as initialReels } from "@/lib/data";
 import { useI18n } from "@/lib/i18n/provider";
 
@@ -15,6 +17,7 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(true);
   const [notifTitle, setNotifTitle] = useState("");
   const [notifMsg, setNotifMsg] = useState("");
+  const [pendingProviders, setPendingProviders] = useState<any[]>([]);
 
   useEffect(()=>{
     const role = localStorage.getItem("travgo-role");
@@ -22,10 +25,23 @@ export default function AdminPage() {
     if(role && role!=="ADMIN" && role!=="SUPER_ADMIN") setIsAdmin(false);
     if(!role && !user) setIsAdmin(false);
   },[]);
+  // Temps réel : prestataires en attente
+  useEffect(()=>{
+    const q = query(collection(db, "users"), where("role", "==", "PROVIDER_PENDING"));
+    const unsub = onSnapshot(q, (snap)=> setPendingProviders(snap.docs.map(d=>({ id:d.id, ...d.data() }))), ()=> setPendingProviders([]));
+    return ()=> unsub();
+  },[]);
   const show = (m:string)=>{ setToast(m); setTimeout(()=>setToast(""),2200); };
   const approveOffer = (id:string)=>{ setOffers(o=>o.map(x=>x.id===id?{...x, verified:true}:x)); show("✓ "+(t as any).admin.approve); };
   const refuseOffer = (id:string)=>{ setOffers(o=>o.filter(x=>x.id!==id)); show((t as any).admin.refuse); };
-  const approveProv = (id:string)=>{ setProviders(p=>p.map(x=>x.id===id?{...x, verified:true}:x)); show("✓ "+(t as any).admin.approve); };
+  const approveProv = async (id:string)=>{
+    try { await updateDoc(doc(db, "users", id), { role: "PROVIDER", status: "ACTIVE", verified: true }); show("✓ Prestataire activé — dashboard débloqué"); }
+    catch(e:any){ show("✗ "+e.message); }
+  };
+  const refuseProv = async (id:string)=>{
+    try { await updateDoc(doc(db, "users", id), { role: "USER", status: "REFUSED" }); show("Prestataire refusé"); }
+    catch(e:any){ show("✗ "+e.message); }
+  };
   const suspendReel = (id:string)=>{ setReels(r=>r.filter(x=>x.id!==id)); show((t as any).admin.refuse); };
   const sponsorReel = (id:string)=>{ show("✓ "+(t as any).admin.sponsor); };
 
@@ -76,14 +92,16 @@ export default function AdminPage() {
               </div>
               <div className="grid lg:grid-cols-2 gap-6">
                 <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border border-[#E2E8F0] dark:border-[#1E293B] p-6">
-                  <h3 className="font-bold mb-3 dark:text-white">{(t as any).admin.pendingProviders}</h3>
-                  <div className="space-y-3">{providers.slice(0,4).map(p=>(
+                  <h3 className="font-bold mb-3 dark:text-white">{(t as any).admin.pendingProviders} — Temps réel ({pendingProviders.length})</h3>
+                  {pendingProviders.length===0 ? <div className="text-sm text-[#64748B] py-4 text-center">Aucun prestataire en attente — les nouvelles inscriptions apparaîtront ici en temps réel.</div> : (
+                  <div className="space-y-3">{pendingProviders.slice(0,4).map((p:any)=>(
                     <div key={p.id} className="flex items-center gap-3 p-3 rounded-2xl border border-[#E2E8F0] dark:border-[#1E293B] dark:bg-[#1A2332] card-hover">
-                      <img src={p.logo} alt={p.name} className="h-10 w-10 rounded-xl object-cover" />
-                      <div className="flex-1"><div className="font-bold text-sm dark:text-white">{p.name}</div><div className="text-xs text-[#64748B] dark:text-[#94A3B8]">{p.city} • {p.verified ? ((t as any).admin.approved):((t as any).admin.waiting)}</div></div>
-                      <button onClick={()=>approveProv(p.id)} className="px-3 py-1 rounded-full bg-[#0E7C6B] dark:bg-[#14B8A6] text-white text-xs font-bold icon-3d">{(t as any).admin.approve}</button>
+                      <img src={p.logo || p.photoURL || `https://i.pravatar.cc/100?u=${p.email}`} alt={p.name} className="h-10 w-10 rounded-xl object-cover" />
+                      <div className="flex-1 min-w-0"><div className="font-bold text-sm dark:text-white truncate">{p.name}</div><div className="text-xs text-[#64748B] truncate">{p.city || "—"} • {p.email} • {(t as any).admin.waiting}</div></div>
+                      <div className="flex gap-1"><button onClick={()=>approveProv(p.id)} className="px-3 py-1 rounded-full bg-[#0E7C6B] text-white text-xs font-bold">✓</button><button onClick={()=>refuseProv(p.id)} className="px-2 py-1 rounded-full border text-xs">✕</button></div>
                     </div>
                   ))}</div>
+                  )}
                 </div>
                 <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border border-[#E2E8F0] dark:border-[#1E293B] p-6">
                   <h3 className="font-bold mb-3 dark:text-white">{(t as any).admin.pendingOffers}</h3>
@@ -108,16 +126,27 @@ export default function AdminPage() {
           )}
           {active===1 && (
             <div className="bg-white dark:bg-[#0F172A] rounded-[20px] border border-[#E2E8F0] dark:border-[#1E293B] p-6">
-              <h3 className="font-bold dark:text-white">{(t as any).admin.pendingProviders} — {(t as any).common.manage}</h3>
-              <div className="flex gap-2 mt-3"><input placeholder="Rechercher..." className="flex-1 h-10 rounded-full border px-4 bg-[#F8FAFB] dark:bg-[#1A2332] dark:text-white text-sm" /><button onClick={()=>show((t as any).admin.export+" CSV")} className="px-4 h-10 rounded-full bg-[#0F172A] dark:bg-white dark:text-black text-white text-sm">{(t as any).admin.export}</button></div>
-              <div className="mt-4 space-y-2">{providers.map(p=>(
+              <h3 className="font-bold dark:text-white">{(t as any).admin.pendingProviders} — Temps réel</h3>
+              <div className="flex gap-2 mt-3"><input placeholder="Rechercher..." className="flex-1 h-10 rounded-full border px-4 bg-[#F8FAFB] dark:bg-[#1A2332] dark:text-white text-sm" /><span className="px-3 py-2 rounded-full bg-[#0E7C6B] text-white text-xs font-bold">{pendingProviders.length} en attente</span></div>
+              {pendingProviders.length===0 ? <div className="text-sm text-[#64748B] py-8 text-center">Aucun prestataire en attente</div> : (
+              <div className="mt-4 space-y-2">{pendingProviders.map((p:any)=>(
                 <div key={p.id} className="flex items-center gap-3 p-3 rounded-2xl border dark:border-[#1E293B] dark:bg-[#1A2332]">
-                  <img src={p.logo} alt={p.name} className="h-10 w-10 rounded-xl" />
-                  <div className="flex-1 dark:text-white"><div className="font-bold text-sm">{p.name} — {p.city}</div><div className="text-xs text-[#64748B]">{p.verified ? (t as any).admin.verifiedMOT : (t as any).admin.inVerifDocs}</div></div>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${p.verified?"bg-[#ECFDF5] text-[#065F46]":"bg-[#FFFBEB] text-[#92400E]"}`}>{p.verified?(t as any).admin.approved:(t as any).admin.waiting}</span>
-                  <button onClick={()=>approveProv(p.id)} className="px-3 py-1 rounded-full bg-[#0E7C6B] dark:bg-[#14B8A6] text-white text-xs icon-3d">{(t as any).admin.manage}</button>
+                  <img src={p.logo || p.photoURL || `https://i.pravatar.cc/100?u=${p.email}`} alt={p.name} className="h-10 w-10 rounded-xl object-cover" />
+                  <div className="flex-1 min-w-0 dark:text-white"><div className="font-bold text-sm truncate">{p.name} — {p.city || "—"}</div><div className="text-xs text-[#64748B] truncate">{p.email} • {(t as any).admin.waiting}</div></div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#FFFBEB] text-[#92400E]">{(t as any).admin.waiting}</span>
+                  <div className="flex gap-1"><button onClick={()=>approveProv(p.id)} className="px-3 py-1 rounded-full bg-[#0E7C6B] text-white text-xs">Approuver</button><button onClick={()=>refuseProv(p.id)} className="px-2 py-1 rounded-full border text-xs dark:text-white">Refuser</button></div>
                 </div>
               ))}</div>
+              )}
+              <div className="mt-6 pt-4 border-t dark:border-[#1E293B]">
+                <h4 className="font-bold text-sm dark:text-white mb-2">Prestataires existants (démo)</h4>
+                <div className="space-y-2">{providers.slice(0,3).map(p=>(
+                  <div key={p.id} className="flex items-center gap-3 p-3 rounded-2xl border dark:border-[#1E293B] dark:bg-[#1A2332] opacity-60">
+                    <img src={p.logo} alt={p.name} className="h-8 w-8 rounded-xl" />
+                    <div className="flex-1 dark:text-white"><div className="font-bold text-xs">{p.name} — {p.city}</div><div className="text-xs text-[#64748B]">Démo • {(t as any).admin.verifiedMOT}</div></div>
+                  </div>
+                ))}</div>
+              </div>
             </div>
           )}
           {active===2 && (
