@@ -155,12 +155,34 @@ export default function AdminPage() {
   const displayDests = destsReal.length ? destsReal : dests;
   const displayReels = reelsReal.length ? reelsReal : reels;
 
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+
   return (
     <div className="mx-auto max-w-[1280px] px-4 lg:px-6 py-6">
       {!isAdmin && <div className="mb-4 p-3 rounded-2xl bg-[#FEF2F2] border text-sm text-[#991B1B]">Accès restreint — connecte-toi avec <b>khalil.alnajjar81@gmail.com</b></div>}
       {toast && <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-[#0F172A] text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg z-50">{toast}</div>}
+      {/* Bouton menu mobile admin */}
+      <div className="lg:hidden mb-4">
+        <button onClick={() => setAdminMenuOpen(!adminMenuOpen)} className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-[#0F172A] text-white font-bold shadow">
+          <span className="flex items-center gap-2"><img src="/logo-travgo.jpg" alt="" className="h-6 w-6 rounded-lg object-cover" /> Menu Admin • {menu[active]}</span>
+          <span className={`transition-transform ${adminMenuOpen ? "rotate-180" : ""}`}>⌄</span>
+        </button>
+        {adminMenuOpen && (
+          <div className="mt-3 bg-[#0F172A] rounded-2xl p-3 border">
+            <nav className="grid grid-cols-2 gap-1.5">
+              {menu.map((l: string, i: number) => (
+                <button key={l} onClick={() => { setActive(i); setAdminMenuOpen(false); }} className={`text-left px-3 py-2.5 rounded-full text-xs font-bold ${i === active ? "bg-white text-[#0F172A]" : "bg-white/10 text-white/80"}`}>{l}</button>
+              ))}
+            </nav>
+            <div className="mt-3 p-2 rounded-xl bg-white/10 border border-white/10 flex items-center gap-2">
+              <img src={user?.photoURL || "/logo-travgo.jpg"} alt="" className="h-8 w-8 rounded-full object-cover bg-white border-2 border-white/20" />
+              <div className="text-xs text-white"><div className="font-bold">{adminName} — ADMIN</div><div className="opacity-60 text-[11px]">khalil.alnajjar81@gmail.com</div></div>
+            </div>
+          </div>
+        )}
+      </div>
       <div className="flex flex-col lg:flex-row gap-6">
-        <aside className="lg:w-[260px] shrink-0">
+        <aside className="hidden lg:block lg:w-[260px] shrink-0">
           <div className="bg-[#0F172A] text-white rounded-[20px] p-4 sticky top-[76px] border">
             <div className="font-black mb-4 flex items-center gap-2"><img src="/logo-travgo.jpg" alt="TravGo" className="h-7 w-7 rounded-lg object-cover border border-white/20" /><span>{(t as any).admin.title}</span></div>
             <nav className="space-y-1 text-sm">
