@@ -13,7 +13,7 @@ Marketplace touristique premium qui connecte voyageurs et agences vérifiées en
 - **Capacitor 8.5.0** (`@capacitor/app 8.1.1`) → `android/` `com.travgo.app` `TravGo`
 
 ## Données Firebase / Firestore
-- **Users:** seul compte conservé `khalil.alnajjar81@gmail.com` (`ADMIN`, `khalil-admin`) — demo nettoyé. Voir `src/app/admin/page.tsx:35`
+- **Users:** seul compte conservé `khalil.*******@gmail.com` (`ADMIN`, `khalil-admin`) — demo nettoyé. Voir `src/app/admin/page.tsx:35`
 - **Collections vides à seeder si besoin:** `offers`, `providers`, `categories`, `destinations`, `reels`, `quoteRequests`, `providerRequests` (données statiques dans `src/lib/data.ts` utilisées en attendant)
 - **Règles:** `firestore.rules` + `storage.rules` (permissif temporaire pour contourner `CONFIGURATION_NOT_FOUND` Auth désactivé — à resserrer après activation Email/Password)
 - **Seed:** `src/lib/firebase/seed.ts` + bouton admin *Seed KSA*
